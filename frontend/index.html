@@ -16,37 +16,89 @@
     audio, a { margin-top: 10px; display: block; }
     .eliminar { background: #dc3545; margin-top: 15px; }
     .eliminar:hover { background: #c82333; }
+
+    /* Estilo para la pantalla de contraseña */
+    #loginScreen {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000;
+    }
+    #loginBox {
+      background: white; padding: 40px; border-radius: 10px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      width: 90%; max-width: 400px;
+    }
+    #loginBox h2 { margin-bottom: 20px; color: #333; }
+    #passwordInput { padding: 12px; width: 80%; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+    #loginError { color: red; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
-  <h1>Mi Biblioteca Personal</h1>
 
-  <form id="formLibro">
-    <input type="text" id="titulo" placeholder="Título" required>
-    <input type="text" id="autor" placeholder="Autor" required>
-    <textarea id="descripcion" placeholder="Descripción del libro" rows="3"></textarea>
-    <input type="text" id="genero" placeholder="Género (ej. Ficción, Misterio)">
-    <input type="number" id="ano" placeholder="Año de publicación">
-    <select id="tipo" required>
-      <option value="pdf">PDF</option>
-      <option value="audio">Audiolibro</option>
-    </select>
-    <input type="url" id="archivoUrl" placeholder="URL de OneDrive del PDF o audio" required>
-    <input type="url" id="imagenUrl" placeholder="URL de OneDrive de la imagen de cubierta (opcional)">
-    <button type="submit">Añadir libro</button>
-  </form>
-
-  <div class="buscador">
-    <input type="text" id="busqueda" placeholder="Buscar por título, autor, descripción o género...">
-    <button onclick="buscar()">Buscar</button>
-    <button onclick="cargarLibros()">Mostrar todos</button>
+  <!-- Pantalla de contraseña -->
+  <div id="loginScreen">
+    <div id="loginBox">
+      <h2>Acceso privado</h2>
+      <p>Introduce la contraseña para entrar a la biblioteca</p>
+      <input type="password" id="passwordInput" placeholder="Contraseña">
+      <button onclick="verificarPassword()" style="margin-top: 20px;">Entrar</button>
+      <p id="loginError">Contraseña incorrecta</p>
+    </div>
   </div>
 
-  <div id="listaLibros"></div>
+  <!-- Contenido real de la biblioteca (oculto hasta login) -->
+  <div id="appContent" style="display: none;">
+    <h1>Mi Biblioteca Personal</h1>
+
+    <form id="formLibro">
+      <input type="text" id="titulo" placeholder="Título" required>
+      <input type="text" id="autor" placeholder="Autor" required>
+      <textarea id="descripcion" placeholder="Descripción del libro" rows="3"></textarea>
+      <input type="text" id="genero" placeholder="Género (ej. Ficción, Misterio)">
+      <input type="number" id="ano" placeholder="Año de publicación">
+      <select id="tipo" required>
+        <option value="pdf">PDF</option>
+        <option value="audio">Audiolibro</option>
+      </select>
+      <input type="url" id="archivoUrl" placeholder="URL de OneDrive del PDF o audio" required>
+      <input type="url" id="imagenUrl" placeholder="URL de OneDrive de la imagen de cubierta (opcional)">
+      <button type="submit">Añadir libro</button>
+    </form>
+
+    <div class="buscador">
+      <input type="text" id="busqueda" placeholder="Buscar por título, autor, descripción o género...">
+      <button onclick="buscar()">Buscar</button>
+      <button onclick="cargarLibros()">Mostrar todos</button>
+    </div>
+
+    <div id="listaLibros"></div>
+  </div>
 
   <script>
-    const API_URL = 'https://biblioteca-5rid.onrender.com/api/libros'; // Cambia por tu URL real
+    const API_URL = 'https://biblioteca-5rid.onrender.com/api/libros'; // Tu URL real
+    const PASSWORD_CORRECTA = 'dany2233'; // Puedes cambiarla aquí si quieres
 
+    function verificarPassword() {
+      const input = document.getElementById('passwordInput').value;
+      const error = document.getElementById('loginError');
+
+      if (input === PASSWORD_CORRECTA) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        cargarLibros(); // Carga los libros al entrar
+      } else {
+        error.style.display = 'block';
+        document.getElementById('passwordInput').value = '';
+      }
+    }
+
+    // Permitir entrar con Enter
+    document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') verificarPassword();
+    });
+
+    // --- El resto del código original (sin cambios) ---
     async function cargarLibros() {
       const res = await fetch(API_URL);
       const libros = await res.json();
@@ -114,8 +166,6 @@
         cargarLibros();
       }
     }
-
-    cargarLibros();
   </script>
 </body>
 </html>
