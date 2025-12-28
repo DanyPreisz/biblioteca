@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mi Biblioteca Personal</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+    h1 { text-align: center; color: #333; }
+    form, .buscador { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    input, textarea, select { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    button { background: #007bff; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
+    button:hover { background: #0056b3; }
+    .libro { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    img { max-width: 200px; max-height: 300px; object-fit: cover; border-radius: 5px; margin-bottom: 10px; }
+    audio, a { margin-top: 10px; display: block; }
+    .eliminar { background: #dc3545; margin-top: 15px; }
+    .eliminar:hover { background: #c82333; }
+  </style>
+</head>
+<body>
+  <h1>Mi Biblioteca Personal</h1>
+
+  <form id="formLibro">
+    <input type="text" id="titulo" placeholder="Título" required>
+    <input type="text" id="autor" placeholder="Autor" required>
+    <textarea id="descripcion" placeholder="Descripción del libro" rows="3"></textarea>
+    <input type="text" id="genero" placeholder="Género (ej. Ficción, Misterio)">
+    <input type="number" id="ano" placeholder="Año de publicación">
+    <select id="tipo" required>
+      <option value="pdf">PDF</option>
+      <option value="audio">Audiolibro</option>
+    </select>
+    <input type="url" id="archivoUrl" placeholder="URL de OneDrive del PDF o audio" required>
+    <input type="url" id="imagenUrl" placeholder="URL de OneDrive de la imagen de cubierta (opcional)">
+    <button type="submit">Añadir libro</button>
+  </form>
+
+  <div class="buscador">
+    <input type="text" id="busqueda" placeholder="Buscar por título, autor, descripción o género...">
+    <button onclick="buscar()">Buscar</button>
+    <button onclick="cargarLibros()">Mostrar todos</button>
+  </div>
+
+  <div id="listaLibros"></div>
+
+  <script>
+    const API_URL = 'https://biblioteca.onrender.com/api/libros'; // Cambia por tu URL real
+
+    async function cargarLibros() {
+      const res = await fetch(API_URL);
+      const libros = await res.json();
+      mostrarLibros(libros);
+    }
+
+    async function buscar() {
+      const q = document.getElementById('busqueda').value.trim();
+      const url = q ? `${API_URL}/buscar?q=${encodeURIComponent(q)}` : API_URL;
+      const res = await fetch(url);
+      const libros = await res.json();
+      mostrarLibros(libros);
+    }
+
+    function mostrarLibros(libros) {
+      const contenedor = document.getElementById('listaLibros');
+      contenedor.innerHTML = libros.length === 0 ? '<p>No hay libros.</p>' : '';
+      libros.forEach(libro => {
+        const div = document.createElement('div');
+        div.className = 'libro';
+        div.innerHTML = `
+          ${libro.imagenUrl ? `<img src="${libro.imagenUrl}" alt="Portada de ${libro.titulo}">` : ''}
+          <h3>${libro.titulo}</h3>
+          <p><strong>Autor:</strong> ${libro.autor}</p>
+          ${libro.descripcion ? `<p><strong>Descripción:</strong> ${libro.descripcion}</p>` : ''}
+          ${libro.genero || libro.ano ? `<p><strong>Género:</strong> ${libro.genero || 'No especificado'} | <strong>Año:</strong> ${libro.ano || 'Desconocido'}</p>` : ''}
+          <p><strong>Archivo:</strong> 
+            ${libro.tipo === 'pdf' 
+              ? `<a href="${libro.archivoUrl}" target="_blank">Abrir PDF</a>` 
+              : `<audio controls src="${libro.archivoUrl}"></audio>`
+            }
+          </p>
+          <button class="eliminar" onclick="eliminarLibro('${libro._id}')">Eliminar</button>
+        `;
+        contenedor.appendChild(div);
+      });
+    }
+
+    document.getElementById('formLibro').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const datos = {
+        titulo: document.getElementById('titulo').value,
+        autor: document.getElementById('autor').value,
+        descripcion: document.getElementById('descripcion').value,
+        genero: document.getElementById('genero').value,
+        ano: document.getElementById('ano').value ? parseInt(document.getElementById('ano').value) : null,
+        tipo: document.getElementById('tipo').value,
+        archivoUrl: document.getElementById('archivoUrl').value.trim(),
+        imagenUrl: document.getElementById('imagenUrl').value.trim() || null
+      };
+
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(datos)
+      });
+
+      cargarLibros();
+      e.target.reset();
+    });
+
+    async function eliminarLibro(id) {
+      if (confirm('¿Eliminar este libro de la biblioteca?')) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        cargarLibros();
+      }
+    }
+
+    cargarLibros();
+  </script>
+</body>
+</html>
